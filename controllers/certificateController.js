@@ -1,8 +1,4 @@
 const Certificate = require('../models/Certificate');
-
-// @desc    Create new certificate
-// @route   POST /api/certificates
-// @access  Private
 const createCertificate = async (req, res) => {
   try {
     const {
@@ -30,9 +26,7 @@ const createCertificate = async (req, res) => {
   }
 };
 
-// @desc    Get all certificates
-// @route   GET /api/certificates
-// @access  Private
+
 const getCertificates = async (req, res) => {
   try {
     const certificates = await Certificate.find({ vendor: req.vendor._id }).sort({ createdAt: -1 });
@@ -41,9 +35,7 @@ const getCertificates = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch certificates' });
   }
 };
-// @desc    Delete certificate by ID
-// @route   DELETE /api/certificates/:id
-// @access  Private
+
 const deleteCertificate = async (req, res) => {
   try {
     const certificate = await Certificate.findById(req.params.id);
@@ -62,9 +54,6 @@ const deleteCertificate = async (req, res) => {
   }
 };
 
-// @desc    Get certificate statistics
-// @route   GET /api/certificates/stats
-// @access  Private
 const getCertificateStats = async (req, res) => {
   try {
     const total = await Certificate.countDocuments({ vendor: req.vendor._id });

@@ -1,4 +1,3 @@
-// server/controllers/vendorController.js
 const Vendor = require('../models/Vendor');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -51,6 +50,7 @@ exports.loginVendor = async (req, res) => {
         businessName: vendor.businessName,
         status: vendor.status,
       },
+      token,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });

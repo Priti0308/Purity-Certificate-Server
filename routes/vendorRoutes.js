@@ -1,4 +1,3 @@
-// server/routes/vendorRoutes.js
 const express = require('express');
 const router = express.Router();
 const {
@@ -26,4 +25,4 @@ router.put('/:id/approve', approveVendor);
 router.put('/:id/reject', rejectVendor);
 router.put('/:id/set-password', setVendorPassword);
 
-module.exports = router; // ✅ Make sure you're exporting `router`, not calling it
+module.exports = router; 
