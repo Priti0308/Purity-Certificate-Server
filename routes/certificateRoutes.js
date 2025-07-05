@@ -5,7 +5,8 @@ const {
   getCertificates,
   deleteCertificate,
   getCertificateStats,
-  getRecentActivities
+  getRecentActivities,
+  updateCertificate, // ✅
 } = require('../controllers/certificateController');
 const protect = require('../middleware/authMiddleware');
 
@@ -14,5 +15,6 @@ router.get('/', protect, getCertificates);
 router.get('/stats', protect, getCertificateStats);
 router.get('/recent', protect, getRecentActivities);
 router.delete('/:id', protect, deleteCertificate);
+router.put('/:id', protect, updateCertificate); // ✅ PUT route
 
 module.exports = router;
