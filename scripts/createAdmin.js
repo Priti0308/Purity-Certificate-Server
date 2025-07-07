@@ -5,17 +5,17 @@ require('dotenv').config();
 
 mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(async () => {
-    const existing = await Admin.findOne({ username: 'admin' });
+    const existing = await Admin.findOne({ username: 'VCA' });
 
     if (existing) {
       console.log('⚠️ Admin already exists.');
       return mongoose.disconnect();
     }
 
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    const hashedPassword = await bcrypt.hash('Pratik@9420', 10);
 
     const admin = new Admin({
-      username: 'admin',
+      username: 'VCA',
       password: hashedPassword,
     });
 

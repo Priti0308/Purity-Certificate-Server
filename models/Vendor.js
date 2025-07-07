@@ -10,7 +10,11 @@ const vendorSchema = new mongoose.Schema({
   mobile: {
     type: String,
     required: true,
-    match: [/^\d{10}$/, 'Enter a valid 10-digit mobile number'],
+    match: [/^\d{10}$/, 'Enter a valid 10-digit phone number'],
+  },
+  address: {
+    type: String,
+    
   },
   businessName: {
     type: String,
@@ -20,6 +24,11 @@ const vendorSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6,
+  },
+  
+  logo: {
+    type: String,
+    default: '',
   },
   status: {
     type: String,

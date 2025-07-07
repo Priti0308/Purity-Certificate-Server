@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 // Register Vendor
 exports.registerVendor = async (req, res) => {
-  const { name, mobile, businessName, password } = req.body;
+  const { name, mobile, businessName, address, password } = req.body;
 
   try {
     const existingVendor = await Vendor.findOne({ name });
@@ -16,6 +16,7 @@ exports.registerVendor = async (req, res) => {
       name,
       mobile,
       businessName,
+      address,
       password: hashedPassword,
       status: 'pending',
     });
@@ -48,9 +49,10 @@ exports.loginVendor = async (req, res) => {
         name: vendor.name,
         mobile: vendor.mobile,
         businessName: vendor.businessName,
+        address: vendor.address || '',
+        logo: vendor.logo || '',
         status: vendor.status,
-      },
-      token,
+      }
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -59,13 +61,13 @@ exports.loginVendor = async (req, res) => {
 
 // Create Vendor (Admin)
 exports.createVendor = async (req, res) => {
-  const { name, mobile, businessName, password } = req.body;
+  const { name, mobile, businessName, password, address } = req.body;
   try {
     const existing = await Vendor.findOne({ name });
     if (existing) return res.status(400).json({ message: 'Vendor already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const vendor = new Vendor({ name, mobile, businessName, password: hashedPassword, status: 'pending' });
+    const vendor = new Vendor({ name, mobile, address, businessName, password: hashedPassword, status: 'pending' });
     await vendor.save();
     res.status(201).json({ message: 'Vendor created successfully', vendor });
   } catch (error) {
@@ -83,10 +85,25 @@ exports.getAllVendors = async (req, res) => {
   }
 };
 
-// Update Vendor
+// ✅ Update Vendor with support for address and logo
 exports.updateVendor = async (req, res) => {
   try {
-    const vendor = await Vendor.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const updateFields = {
+      name: req.body.name,
+      mobile: req.body.mobile,
+      businessName: req.body.businessName,
+      address: req.body.address,
+      logo: req.body.logo
+    };
+
+    const vendor = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateFields },
+      { new: true }
+    );
+
+    if (!vendor) return res.status(404).json({ message: 'Vendor not found' });
+
     res.status(200).json(vendor);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -123,6 +140,7 @@ exports.rejectVendor = async (req, res) => {
   }
 };
 
+// Set/Reset Password (Admin)
 exports.setVendorPassword = async (req, res) => {
   try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10);
