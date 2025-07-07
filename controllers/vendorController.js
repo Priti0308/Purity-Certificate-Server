@@ -29,15 +29,16 @@ exports.registerVendor = async (req, res) => {
 };
 
 // Login Vendor
+// Login Vendor (backend/controller)
 exports.loginVendor = async (req, res) => {
-  const { name, password } = req.body;
+  const { mobile, password } = req.body;
 
   try {
-    const vendor = await Vendor.findOne({ name });
-    if (!vendor) return res.status(400).json({ message: 'Invalid credentials' });
+    const vendor = await Vendor.findOne({ mobile });
+    if (!vendor) return res.status(400).json({ message: 'Invalid mobile number or password' });
 
     const isMatch = await bcrypt.compare(password, vendor.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(400).json({ message: 'Invalid mobile number or password' });
 
     const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
 
@@ -52,12 +53,13 @@ exports.loginVendor = async (req, res) => {
         address: vendor.address || '',
         logo: vendor.logo || '',
         status: vendor.status,
-      }
+      },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // Create Vendor (Admin)
 exports.createVendor = async (req, res) => {
