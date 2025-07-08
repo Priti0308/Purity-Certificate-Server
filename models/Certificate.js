@@ -8,6 +8,11 @@ const certificateSchema = new mongoose.Schema({
   grossWeight: { type: String, required: true },
   date: { type: String, required: true },
   notes: { type: String },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending',
+  },
   vendor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vendor',

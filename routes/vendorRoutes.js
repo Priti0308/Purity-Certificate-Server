@@ -1,5 +1,11 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const upload = multer({
+  limits: { fileSize: 500 * 1024 }, // Limit file size to 500KB
+  storage: multer.memoryStorage(),
+});
+
 const {
   registerVendor,
   loginVendor,
@@ -13,7 +19,7 @@ const {
 } = require('../controllers/vendorController');
 
 const protectVendor = require('../middleware/authMiddleware');
-const Vendor = require('../models/Vendor');
+// const Vendor = require('../models/Vendor');
 
 // 📌 Vendor Auth
 router.post('/register', registerVendor);
@@ -28,15 +34,24 @@ router.get('/me', protectVendor, async (req, res) => {
   }
 });
 
-// ✅ Vendor Self Profile (PUT update)
-router.put('/me', protectVendor, async (req, res) => {
+// ✅ Vendor Self Profile (PUT update with logo upload)
+router.put('/me', protectVendor, upload.single('logo'), async (req, res) => {
   try {
-    const updated = await Vendor.findByIdAndUpdate(req.vendor._id, req.body, {
+    const updates = req.body;
+
+    // If a file is uploaded, convert it to base64 and include in the update
+    if (req.file) {
+      updates.logo = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    }
+
+    const updated = await Vendor.findByIdAndUpdate(req.vendor._id, updates, {
       new: true,
       runValidators: true,
     }).select('-password');
+
     res.json(updated);
   } catch (err) {
+    console.error('Update error:', err.message);
     res.status(500).json({ message: 'Failed to update profile', error: err.message });
   }
 });

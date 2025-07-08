@@ -1,112 +1,97 @@
 const Certificate = require('../models/Certificate');
 
-// Create Certificate
+// ✅ Create Certificate
 const createCertificate = async (req, res) => {
   try {
-    const { serialNo, name, item, fineness, grossWeight, date, notes } = req.body;
-
-    if (!serialNo || !name || !item || !fineness || !grossWeight || !date) {
-      return res.status(400).json({ message: 'All fields required' });
-    }
-
-    const certificate = await Certificate.create({
-      serialNo,
-      name,
-      item,
-      fineness,
-      grossWeight,
-      date,
-      notes,
-      vendor: req.vendor._id,
+    const newCert = new Certificate({
+      ...req.body,
+      vendor: req.vendor._id  // ✅ attach vendor ID from middleware
     });
 
-    res.status(201).json(certificate);
+    await newCert.save();
+    res.status(201).json({ message: 'Certificate created successfully', certificate: newCert });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Failed to create certificate', error: error.message });
   }
 };
 
-// Get All Certificates
+// ✅ Get All Certificates
 const getCertificates = async (req, res) => {
   try {
-    const certificates = await Certificate.find({ vendor: req.vendor._id }).sort({ createdAt: -1 });
-    res.json(certificates);
+    const certs = await Certificate.find({ vendor: req.vendor._id });
+    res.json(certs);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch certificates', error: err.message });
+    res.status(500).json({ message: 'Failed to get certificates', error: err.message });
   }
 };
 
-// Delete Certificate
+// ✅ Delete Certificate
 const deleteCertificate = async (req, res) => {
   try {
-    const certificate = await Certificate.findById(req.params.id);
-    if (!certificate) {
-      return res.status(404).json({ message: 'Certificate not found' });
-    }
-
-    if (certificate.vendor.toString() !== req.vendor._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to delete this certificate' });
-    }
-
-    await certificate.deleteOne();
+    await Certificate.findByIdAndDelete(req.params.id);
     res.json({ message: 'Certificate deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete certificate', error: err.message });
   }
 };
 
-// Get Certificate Stats
-const getCertificateStats = async (req, res) => {
-  try {
-    const total = await Certificate.countDocuments({ vendor: req.vendor._id });
-    const approved = await Certificate.countDocuments({ vendor: req.vendor._id, status: 'approved' });
-    const pending = await Certificate.countDocuments({ vendor: req.vendor._id, status: 'pending' });
-    const rejected = await Certificate.countDocuments({ vendor: req.vendor._id, status: 'rejected' });
-
-    res.json({ total, approved, pending, rejected });
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch certificate statistics', error: error.message });
-  }
-};
-
-// Get Recent Activities
-const getRecentActivities = async (req, res) => {
-  try {
-    const recentCertificates = await Certificate.find({ vendor: req.vendor._id })
-      .sort({ updatedAt: -1 })
-      .limit(5)
-      .select('status createdAt updatedAt serialNo');
-
-    const activities = recentCertificates.map(cert => {
-      const action = (cert.createdAt.getTime() === cert.updatedAt.getTime())
-        ? `Certificate #${cert.serialNo} created`
-        : `Certificate #${cert.serialNo} updated to ${cert.status}`;
-
-      return { action, timestamp: cert.updatedAt };
-    });
-
-    res.json(activities);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch recent activities', error: error.message });
-  }
-};
-//update certificate
-// Update Certificate
+// ✅ Update Certificate
 const updateCertificate = async (req, res) => {
   try {
-    const cert = await Certificate.findById(req.params.id);
-    if (!cert) {
-      return res.status(404).json({ message: 'Certificate not found' });
-    }
-
-    if (cert.vendor.toString() !== req.vendor._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to update this certificate' });
-    }
-
     const updated = await Certificate.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.json(updated);
-  } catch (error) {
-    res.status(500).json({ message: 'Failed to update certificate', error: error.message });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update certificate', error: err.message });
+  }
+};
+
+// ✅ Certificate Stats
+const getCertificateStats = async (req, res) => {
+  try {
+    const total = await Certificate.countDocuments();
+    const approved = await Certificate.countDocuments({ status: 'approved' });
+    const rejected = await Certificate.countDocuments({ status: 'rejected' });
+    const pending = await Certificate.countDocuments({ status: { $nin: ['approved', 'rejected'] } });
+
+    res.json({ total, approved, rejected, pending });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to get stats', error: err.message });
+  }
+};
+
+// ✅ Recent Activities
+const getRecentActivities = async (req, res) => {
+  try {
+    const recent = await Certificate.find().sort({ createdAt: -1 }).limit(5);
+    res.json(recent);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to get recent activities', error: err.message });
+  }
+};
+
+// ✅ Approve Certificate
+const approveCertificate = async (req, res) => {
+  try {
+    const cert = await Certificate.findById(req.params.id);
+    if (!cert) return res.status(404).json({ message: 'Certificate not found' });
+    cert.status = 'approved';
+    await cert.save();
+    res.json({ message: 'Certificate approved successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to approve certificate', error: err.message });
+  }
+};
+
+// ✅ Reject Certificate
+const rejectCertificate = async (req, res) => {
+  try {
+    const cert = await Certificate.findById(req.params.id);
+    if (!cert) return res.status(404).json({ message: 'Certificate not found' });
+    cert.status = 'rejected';
+    await cert.save();
+    res.json({ message: 'Certificate rejected successfully' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to reject certificate', error: err.message });
   }
 };
 
@@ -117,4 +102,6 @@ module.exports = {
   getCertificateStats,
   getRecentActivities,
   updateCertificate,
+  approveCertificate,
+  rejectCertificate
 };

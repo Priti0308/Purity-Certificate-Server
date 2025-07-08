@@ -2,7 +2,7 @@ const Vendor = require('../models/Vendor');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Register Vendor
+//Register Vendor
 exports.registerVendor = async (req, res) => {
   const { name, mobile, businessName, address, password } = req.body;
 
@@ -28,7 +28,6 @@ exports.registerVendor = async (req, res) => {
   }
 };
 
-// Login Vendor
 // Login Vendor (backend/controller)
 exports.loginVendor = async (req, res) => {
   const { mobile, password } = req.body;

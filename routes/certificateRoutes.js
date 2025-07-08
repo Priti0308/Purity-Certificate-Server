@@ -6,7 +6,9 @@ const {
   deleteCertificate,
   getCertificateStats,
   getRecentActivities,
-  updateCertificate, // ✅
+  updateCertificate,
+  approveCertificate,
+  rejectCertificate
 } = require('../controllers/certificateController');
 const protect = require('../middleware/authMiddleware');
 
@@ -15,6 +17,10 @@ router.get('/', protect, getCertificates);
 router.get('/stats', protect, getCertificateStats);
 router.get('/recent', protect, getRecentActivities);
 router.delete('/:id', protect, deleteCertificate);
-router.put('/:id', protect, updateCertificate); // ✅ PUT route
+router.put('/:id', protect, updateCertificate);
+
+// ✅ New approve/reject routes
+router.put('/:id/approve', protect, approveCertificate);
+router.put('/:id/reject', protect, rejectCertificate);
 
 module.exports = router;
