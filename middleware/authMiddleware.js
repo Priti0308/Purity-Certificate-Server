@@ -1,4 +1,3 @@
-// middleware/authVendor.js
 const jwt = require('jsonwebtoken');
 const Vendor = require('../models/Vendor');
 
@@ -18,8 +17,8 @@ const protectVendor = async (req, res, next) => {
         return res.status(401).json({ message: 'Vendor not found' });
       }
 
-      req.vendor = vendor; // Attach vendor object to request
-      return next(); // ✅ Continue
+      req.vendor = vendor; 
+      return next(); 
     } catch (error) {
       return res.status(401).json({ message: 'Not authorized, token failed' });
     }
