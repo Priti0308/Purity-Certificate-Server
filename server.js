@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const fileUpload = require('express-fileupload');
 const connectDB = require('./config/db');
 
 const vendorRoutes = require('./routes/vendorRoutes');
@@ -25,6 +26,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(fileUpload({
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
+  createParentPath: true
+}));
 app.use('/uploads', express.static('uploads'));
 
 // API Routes

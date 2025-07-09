@@ -5,7 +5,7 @@ const createCertificate = async (req, res) => {
   try {
     const newCert = new Certificate({
       ...req.body,
-      vendor: req.vendor._id  // ✅ attach vendor ID from middleware
+      vendor: req.vendor._id
     });
 
     await newCert.save();
@@ -48,10 +48,11 @@ const updateCertificate = async (req, res) => {
 // ✅ Certificate Stats
 const getCertificateStats = async (req, res) => {
   try {
-    const total = await Certificate.countDocuments();
-    const approved = await Certificate.countDocuments({ status: 'approved' });
-    const rejected = await Certificate.countDocuments({ status: 'rejected' });
-    const pending = await Certificate.countDocuments({ status: { $nin: ['approved', 'rejected'] } });
+    const vendorId = req.vendor._id;
+    const total = await Certificate.countDocuments({ vendor: vendorId });
+    const approved = await Certificate.countDocuments({ vendor: vendorId, status: 'approved' });
+    const rejected = await Certificate.countDocuments({ vendor: vendorId, status: 'rejected' });
+    const pending = await Certificate.countDocuments({ vendor: vendorId, status: { $nin: ['approved', 'rejected'] } });
 
     res.json({ total, approved, rejected, pending });
   } catch (err) {
@@ -62,12 +63,37 @@ const getCertificateStats = async (req, res) => {
 // ✅ Recent Activities
 const getRecentActivities = async (req, res) => {
   try {
-    const recent = await Certificate.find().sort({ createdAt: -1 }).limit(5);
-    res.json(recent);
+    const vendorId = req.vendor._id;
+
+    const recent = await Certificate.find({ vendor: vendorId })
+      .select('item serialNo status createdAt updatedAt')
+      .sort({ updatedAt: -1 })
+      .limit(10);
+
+    const activities = recent.map(cert => {
+      const isNew = cert.createdAt.getTime() === cert.updatedAt.getTime();
+      return {
+        id: cert._id,
+        action: isNew 
+          ? `New certificate created for ${cert.item} (${cert.serialNo})`
+          : `Certificate for ${cert.item} (${cert.serialNo}) was ${cert.status}`,
+        timestamp: isNew ? cert.createdAt : cert.updatedAt,
+        status: cert.status,
+        serialNo: cert.serialNo,
+        item: cert.item
+      };
+    });
+
+    res.json(activities);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to get recent activities', error: err.message });
+    console.error('Recent Activities Error:', err);
+    res.status(500).json({ 
+      message: 'Failed to get recent activities', 
+      error: err.message 
+    });
   }
 };
+
 
 // ✅ Approve Certificate
 const approveCertificate = async (req, res) => {

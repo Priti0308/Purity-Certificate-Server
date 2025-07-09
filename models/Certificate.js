@@ -18,6 +18,15 @@ const certificateSchema = new mongoose.Schema({
     ref: 'Vendor',
     required: true,
   },
+  // Add new fields for PDF generation
+  metalType: { type: String, required: true, default: 'Silver' },
+  leftImage: { type: String, required: true },
+  rightImage: { type: String, required: true },
+  headerTitle: { type: String, required: true, default: 'SWARANJALE' },
+  headerSubtitle: { type: String, required: true, default: 'Melting & Testing' },
+  address: { type: String, required: true },
+  phone: { type: String, required: true },
+  certificateTitle: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Certificate', certificateSchema);

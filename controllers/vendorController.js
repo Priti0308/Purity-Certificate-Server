@@ -89,13 +89,20 @@ exports.getAllVendors = async (req, res) => {
 // ✅ Update Vendor with support for address and logo
 exports.updateVendor = async (req, res) => {
   try {
-    const updateFields = {
-      name: req.body.name,
-      mobile: req.body.mobile,
-      businessName: req.body.businessName,
-      address: req.body.address,
-      logo: req.body.logo
-    };
+    const updateFields = {};
+    
+    // Handle text fields
+    if (req.body.name) updateFields.name = req.body.name;
+    if (req.body.mobile) updateFields.mobile = req.body.mobile;
+    if (req.body.businessName) updateFields.businessName = req.body.businessName;
+    if (req.body.address) updateFields.address = req.body.address;
+    
+    // Handle logo file if present
+    if (req.files && req.files.logoFile) {
+      const logoFile = req.files.logoFile;
+      // Convert the file to base64
+      updateFields.logo = `data:${logoFile.mimetype};base64,${logoFile.data.toString('base64')}`;
+    }
 
     const vendor = await Vendor.findByIdAndUpdate(
       req.params.id,
