@@ -2,34 +2,31 @@ const Vendor = require('../models/Vendor');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-//Register Vendor
-exports.registerVendor = async (req, res) => {
-  const { name, mobile, businessName, address, password } = req.body;
+// Register a new vendor
+const registerVendor = async (req, res) => {
+  const { businessName, ownerName, mobile, password } = req.body;
 
   try {
-    const existingVendor = await Vendor.findOne({ name });
+    const existingVendor = await Vendor.findOne({ mobile });
     if (existingVendor) return res.status(400).json({ message: 'Vendor already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const vendor = new Vendor({
-      name,
-      mobile,
+    const newVendor = await Vendor.create({
       businessName,
-      address,
+      ownerName,
+      mobile,
       password: hashedPassword,
-      status: 'pending',
     });
 
-    await vendor.save();
-    res.status(201).json({ message: 'Vendor registered successfully', vendor });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(201).json({ message: 'Vendor registered successfully', vendor: newVendor });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// Login Vendor (backend/controller)
-exports.loginVendor = async (req, res) => {
+// Login vendor
+const loginVendor = async (req, res) => {
   const { mobile, password } = req.body;
 
   try {
@@ -39,122 +36,142 @@ exports.loginVendor = async (req, res) => {
     const isMatch = await bcrypt.compare(password, vendor.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid mobile number or password' });
 
-    const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: vendor._id }, process.env.JWT_SECRET, {
+      expiresIn: '7d',
+    });
 
-    res.status(200).json({
-      message: 'Login successful',
+    res.json({
       token,
       vendor: {
         id: vendor._id,
-        name: vendor.name,
-        mobile: vendor.mobile,
         businessName: vendor.businessName,
-        address: vendor.address || '',
-        logo: vendor.logo || '',
-        status: vendor.status,
+        ownerName: vendor.ownerName,
+        mobile: vendor.mobile,
+        address: vendor.address,
+        logo: vendor.logo,
       },
     });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  } catch (err) {
+    res.status(500).json({ message: 'Login error', error: err.message });
   }
 };
 
+// Create vendor (admin use)
+const createVendor = async (req, res) => {
+  const { businessName, ownerName, mobile } = req.body;
 
-// Create Vendor (Admin)
-exports.createVendor = async (req, res) => {
-  const { name, mobile, businessName, password, address } = req.body;
   try {
-    const existing = await Vendor.findOne({ name });
-    if (existing) return res.status(400).json({ message: 'Vendor already exists' });
+    const existingVendor = await Vendor.findOne({ mobile });
+    if (existingVendor) return res.status(400).json({ message: 'Vendor already exists' });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const vendor = new Vendor({ name, mobile, address, businessName, password: hashedPassword, status: 'pending' });
-    await vendor.save();
-    res.status(201).json({ message: 'Vendor created successfully', vendor });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const newVendor = await Vendor.create({ businessName, ownerName, mobile });
+
+    res.status(201).json({ message: 'Vendor created', vendor: newVendor });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
-// Get All Vendors
-exports.getAllVendors = async (req, res) => {
+// Get all vendors (admin)
+const getAllVendors = async (req, res) => {
   try {
-    const vendors = await Vendor.find();
-    res.status(200).json(vendors);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const vendors = await Vendor.find().sort({ createdAt: -1 });
+    res.json(vendors);
+  } catch (err) {
+    res.status(500).json({ message: 'Fetch error', error: err.message });
   }
 };
 
-// ✅ Update Vendor with support for address and logo
-exports.updateVendor = async (req, res) => {
+// Update vendor profile
+const updateVendorProfile = async (req, res) => {
   try {
-    const updateFields = {};
-    
-    // Handle text fields
-    if (req.body.name) updateFields.name = req.body.name;
-    if (req.body.mobile) updateFields.mobile = req.body.mobile;
-    if (req.body.businessName) updateFields.businessName = req.body.businessName;
-    if (req.body.address) updateFields.address = req.body.address;
-    
-    // Handle logo file if present
-    if (req.files && req.files.logoFile) {
-      const logoFile = req.files.logoFile;
-      // Convert the file to base64
-      updateFields.logo = `data:${logoFile.mimetype};base64,${logoFile.data.toString('base64')}`;
+    if (!req.vendor) {
+      return res.status(401).json({ message: 'Please login to update profile' });
     }
 
-    const vendor = await Vendor.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateFields },
-      { new: true }
+    const updates = {};
+    // Map the fields that can be updated
+    if (req.body.name) updates.name = req.body.name;
+    if (req.body.businessName) updates.businessName = req.body.businessName;
+    if (req.body.mobile) updates.mobile = req.body.mobile;
+    if (req.body.address) updates.address = req.body.address;
+
+    // if (req.file) {
+    //   updates.logo = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    // }
+
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      req.vendor._id,
+      updates,
+      { new: true, runValidators: true }
     );
 
-    if (!vendor) return res.status(404).json({ message: 'Vendor not found' });
+    if (!updatedVendor) {
+      return res.status(404).json({ message: 'Vendor not found' });
+    }
 
-    res.status(200).json(vendor);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({
+      message: 'Profile updated successfully',
+      vendor: updatedVendor
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      message: 'Profile update failed', 
+      error: err.message 
+    });
   }
 };
 
-// Delete Vendor
-exports.deleteVendor = async (req, res) => {
+// Delete vendor
+const deleteVendor = async (req, res) => {
   try {
     await Vendor.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: 'Vendor deleted' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({ message: 'Vendor deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Delete error', error: err.message });
   }
 };
 
-// Approve Vendor
-exports.approveVendor = async (req, res) => {
+// Approve vendor
+const approveVendor = async (req, res) => {
   try {
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { status: 'approved' }, { new: true });
-    res.status(200).json(vendor);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({ message: 'Vendor approved', vendor });
+  } catch (err) {
+    res.status(500).json({ message: 'Approval failed', error: err.message });
   }
 };
 
-// Reject Vendor
-exports.rejectVendor = async (req, res) => {
+// Reject vendor
+const rejectVendor = async (req, res) => {
   try {
     const vendor = await Vendor.findByIdAndUpdate(req.params.id, { status: 'rejected' }, { new: true });
-    res.status(200).json(vendor);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.json({ message: 'Vendor rejected', vendor });
+  } catch (err) {
+    res.status(500).json({ message: 'Rejection failed', error: err.message });
   }
 };
 
-// Set/Reset Password (Admin)
-exports.setVendorPassword = async (req, res) => {
+// Set vendor password (admin)
+const setVendorPassword = async (req, res) => {
+  const { password } = req.body;
+
   try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10);
-    const vendor = await Vendor.findByIdAndUpdate(req.params.id, { password: hashedPassword }, { new: true });
-    res.status(200).json({ message: 'Password updated successfully', vendor });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const updatedVendor = await Vendor.findByIdAndUpdate(req.params.id, { password: hashedPassword }, { new: true });
+    res.json({ message: 'Password set successfully', vendor: updatedVendor });
+  } catch (err) {
+    res.status(500).json({ message: 'Password set error', error: err.message });
   }
+};
+module.exports = {
+  registerVendor,
+  loginVendor,
+  createVendor,
+  getAllVendors,
+  updateVendorProfile,
+  deleteVendor,
+  approveVendor,
+  rejectVendor,
+  setVendorPassword
 };

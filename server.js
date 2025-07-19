@@ -32,6 +32,8 @@ app.use(fileUpload({
 }));
 app.use('/uploads', express.static('uploads'));
 
+
+// console.log('Vendor routes loaded:', typeof vendorRoutes === 'function');
 // API Routes
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/certificates', certificateRoutes);
