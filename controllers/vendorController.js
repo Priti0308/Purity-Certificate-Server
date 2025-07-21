@@ -111,9 +111,17 @@ const updateVendorProfile = async (req, res) => {
     }
 
     res.json({
-      message: 'Profile updated successfully',
-      vendor: updatedVendor
-    });
+  message: 'Login successful',
+  vendor: {
+    _id: vendor._id,
+    name: vendor.name, // ✅ This must be included
+    mobile: vendor.mobile,
+    businessName: vendor.businessName,
+    address: vendor.address,
+    logo: vendor.logo
+  },
+  token
+});
   } catch (err) {
     res.status(500).json({ 
       message: 'Profile update failed', 

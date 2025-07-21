@@ -19,7 +19,7 @@ router.get('/recent', protect, getRecentActivities);
 router.delete('/:id', protect, deleteCertificate);
 router.put('/:id', protect, updateCertificate);
 
-// ✅ New approve/reject routes
+// New approve/reject routes
 router.put('/:id/approve', protect, approveCertificate);
 router.put('/:id/reject', protect, rejectCertificate);
 

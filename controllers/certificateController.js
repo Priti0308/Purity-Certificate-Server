@@ -1,6 +1,6 @@
 const Certificate = require('../models/Certificate');
 
-// ✅ Create Certificate
+// Create Certificate
 const createCertificate = async (req, res) => {
   try {
     const newCert = new Certificate({
@@ -15,7 +15,7 @@ const createCertificate = async (req, res) => {
   }
 };
 
-// ✅ Get All Certificates
+// Get All Certificates
 const getCertificates = async (req, res) => {
   try {
     const certs = await Certificate.find({ vendor: req.vendor._id });
@@ -25,7 +25,7 @@ const getCertificates = async (req, res) => {
   }
 };
 
-// ✅ Delete Certificate
+// Delete Certificate
 const deleteCertificate = async (req, res) => {
   try {
     await Certificate.findByIdAndDelete(req.params.id);
@@ -35,7 +35,7 @@ const deleteCertificate = async (req, res) => {
   }
 };
 
-// ✅ Update Certificate
+// Update Certificate
 const updateCertificate = async (req, res) => {
   try {
     const updated = await Certificate.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -45,7 +45,7 @@ const updateCertificate = async (req, res) => {
   }
 };
 
-// ✅ Certificate Stats
+// Certificate Stats
 const getCertificateStats = async (req, res) => {
   try {
     const vendorId = req.vendor._id;
@@ -60,7 +60,7 @@ const getCertificateStats = async (req, res) => {
   }
 };
 
-// ✅ Recent Activities
+// Recent Activities
 const getRecentActivities = async (req, res) => {
   try {
     const vendorId = req.vendor._id;
@@ -95,7 +95,7 @@ const getRecentActivities = async (req, res) => {
 };
 
 
-// ✅ Approve Certificate
+// Approve Certificate
 const approveCertificate = async (req, res) => {
   try {
     const cert = await Certificate.findById(req.params.id);
@@ -108,7 +108,7 @@ const approveCertificate = async (req, res) => {
   }
 };
 
-// ✅ Reject Certificate
+// Reject Certificate
 const rejectCertificate = async (req, res) => {
   try {
     const cert = await Certificate.findById(req.params.id);
