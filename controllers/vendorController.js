@@ -114,7 +114,7 @@ const updateVendorProfile = async (req, res) => {
   message: 'Login successful',
   vendor: {
     _id: vendor._id,
-    name: vendor.name, // ✅ This must be included
+    name: vendor.name,
     mobile: vendor.mobile,
     businessName: vendor.businessName,
     address: vendor.address,
