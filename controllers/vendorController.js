@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 
 // Register a new vendor
 const registerVendor = async (req, res) => {
-  const { businessName, ownerName, mobile, password } = req.body;
+  const { businessName, name, mobile, password } = req.body;
 
   try {
     const existingVendor = await Vendor.findOne({ mobile });
@@ -14,7 +14,7 @@ const registerVendor = async (req, res) => {
 
     const newVendor = await Vendor.create({
       businessName,
-      ownerName,
+      name,
       mobile,
       password: hashedPassword,
     });
@@ -45,7 +45,7 @@ const loginVendor = async (req, res) => {
       vendor: {
         id: vendor._id,
         businessName: vendor.businessName,
-        ownerName: vendor.ownerName,
+        name: vendor.name,
         mobile: vendor.mobile,
         address: vendor.address,
         logo: vendor.logo,
@@ -58,16 +58,26 @@ const loginVendor = async (req, res) => {
 
 // Create vendor (admin use)
 const createVendor = async (req, res) => {
-  const { businessName, ownerName, mobile } = req.body;
+  const { businessName, name, mobile, password, address } = req.body;
 
   try {
     const existingVendor = await Vendor.findOne({ mobile });
-    if (existingVendor) return res.status(400).json({ message: 'Vendor already exists' });
+    if (existingVendor) {
+      return res.status(400).json({ message: 'Vendor already exists' });
+    }
 
-    const newVendor = await Vendor.create({ businessName, ownerName, mobile });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newVendor = await Vendor.create({
+      businessName,
+      name,
+      mobile,
+      password: hashedPassword,
+      address,
+    });
 
     res.status(201).json({ message: 'Vendor created', vendor: newVendor });
   } catch (err) {
+    console.error('Error in vendor creation:', err);
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
@@ -90,15 +100,18 @@ const updateVendorProfile = async (req, res) => {
     }
 
     const updates = {};
-    // Map the fields that can be updated
     if (req.body.name) updates.name = req.body.name;
     if (req.body.businessName) updates.businessName = req.body.businessName;
     if (req.body.mobile) updates.mobile = req.body.mobile;
     if (req.body.address) updates.address = req.body.address;
 
-    // if (req.file) {
-    //   updates.logo = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    // }
+    // Handle logo file if uploaded
+    if (req.files && req.files.logoFile) {
+      const logoFile = req.files.logoFile;
+      const logoPath = `/uploads/logos/${Date.now()}-${logoFile.name}`;
+      await logoFile.mv(`.${logoPath}`);
+      updates.logo = logoPath;
+    }
 
     const updatedVendor = await Vendor.findByIdAndUpdate(
       req.vendor._id,
@@ -111,17 +124,9 @@ const updateVendorProfile = async (req, res) => {
     }
 
     res.json({
-  message: 'Login successful',
-  vendor: {
-    _id: vendor._id,
-    name: vendor.name,
-    mobile: vendor.mobile,
-    businessName: vendor.businessName,
-    address: vendor.address,
-    logo: vendor.logo
-  },
-  token
-});
+      message: 'Profile updated successfully',
+      vendor: updatedVendor
+    });
   } catch (err) {
     res.status(500).json({ 
       message: 'Profile update failed', 

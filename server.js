@@ -7,12 +7,13 @@ const connectDB = require('./config/db');
 const vendorRoutes = require('./routes/vendorRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 dotenv.config();
 const app = express();
 connectDB();
 
-// ✅ Allow both localhost and Vercel frontend
+// Allow both localhost and Vercel frontend
 const allowedOrigins = [
   'http://localhost:3000',
   'https://purity-certificate-client.vercel.app'
@@ -26,6 +27,7 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload({
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB max file size
   createParentPath: true
@@ -38,6 +40,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Default route
 app.get('/', (req, res) => {
