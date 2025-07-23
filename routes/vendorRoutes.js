@@ -9,7 +9,8 @@ const {
   approveVendor,
   rejectVendor,
   setVendorPassword,
-  updateVendorProfile
+  updateVendorProfile,
+  updateVendorByAdmin
 } = require('../controllers/vendorController');
 
 const router = express.Router();
@@ -26,5 +27,6 @@ router.delete('/:id', deleteVendor);
 router.put('/:id/approve', approveVendor);
 router.put('/:id/reject', rejectVendor);
 router.put('/:id/set-password', setVendorPassword);
+router.put('/:id', updateVendorByAdmin);
 
 module.exports = router;

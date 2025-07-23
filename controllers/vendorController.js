@@ -177,6 +177,26 @@ const setVendorPassword = async (req, res) => {
     res.status(500).json({ message: 'Password set error', error: err.message });
   }
 };
+const updateVendorByAdmin = async (req, res) => {
+  try {
+    const updates = req.body; 
+    const updatedVendor = await Vendor.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedVendor) {
+      return res.status(404).json({ message: "Vendor not found" });
+    }
+
+    res.json({ message: "Vendor updated successfully", vendor: updatedVendor });
+  } catch (err) {
+    res.status(500).json({ message: "Update failed", error: err.message });
+  }
+};
+
+
 module.exports = {
   registerVendor,
   loginVendor,
@@ -186,5 +206,6 @@ module.exports = {
   deleteVendor,
   approveVendor,
   rejectVendor,
-  setVendorPassword
+  setVendorPassword,
+  updateVendorByAdmin
 };
