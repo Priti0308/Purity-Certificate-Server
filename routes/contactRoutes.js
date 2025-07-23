@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const Contact = require('../models/Contact'); 
+const Contact = require('../models/Contact.js'); 
 
-// POST /api/contact - Create new contact message
 router.post('/', async (req, res) => {
   try {
     const { name, email, subject, message } = req.body;
@@ -22,13 +21,26 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/contact - Get all contact messages
+//contact - Get all contact messages
 router.get('/', async (req, res) => {
   try {
     const messages = await Contact.find().sort({ createdAt: -1 });
     res.json(messages);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch messages' });
+  }
+});
+// DELETE /contact/:id
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const deletedMessage = await Contact.findByIdAndDelete(id);
+    if (!deletedMessage) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+    res.status(200).json({ message: "Message deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete message" });
   }
 });
 
